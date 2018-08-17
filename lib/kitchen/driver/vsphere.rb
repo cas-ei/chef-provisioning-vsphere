@@ -99,10 +99,11 @@ module Kitchen
       # @param [Object] state Uses state of the machine from Chef provisioning.
       def with_provisioning_driver(state)
         config[:machine_options][:convergence_options] = { chef_server: chef_server }
-        machine_spec = Chef::Provisioning.chef_managed_entry_store(chef_server).get(:machine, state[:vsphere_name])
+        instance_name = state[:vsphere_name] || state[:server_vmname]
+        machine_spec = Chef::Provisioning.chef_managed_entry_store(chef_server).get(:machine, instance_name)
         if machine_spec.nil?
           machine_spec = Chef::Provisioning.chef_managed_entry_store(chef_server)
-                                           .new_entry(:machine, state[:vsphere_name])
+                                           .new_entry(:machine, instance_name)
         end
         url = URI::VsphereUrl.from_config(@config[:driver_options]).to_s
         driver = Chef::Provisioning.driver_for_url(url, config)
