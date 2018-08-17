@@ -664,13 +664,13 @@ module ChefProvisioningVsphere
     def wait_until_ready(action_handler, machine_spec, machine_options, vm)
       if vm.guest.toolsRunningStatus != "guestToolsRunning"
         if action_handler.should_perform_actions
-          action_handler.report_progress "waiting for #{machine_spec.name} to be ready ..."
+          action_handler.report_progress "waiting for #{machine_spec.name} to be ready\n"
           until remaining_wait_time(machine_spec, machine_options) < 0 ||
               (vm.guest.toolsRunningStatus == "guestToolsRunning" && vm.guest.ipAddress && !vm.guest.ipAddress.empty?)
             print "."
             sleep 5
           end
-          action_handler.report_progress "#{machine_spec.name} is now ready"
+          action_handler.report_progress "\n#{machine_spec.name} is now ready"
         end
       end
     end

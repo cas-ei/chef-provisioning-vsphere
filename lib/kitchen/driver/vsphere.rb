@@ -72,7 +72,6 @@ module Kitchen
                 state[:server_id] = machine_spec.location["server_id"]
                 state[:hostname] = machine_spec.location["ipaddress"]
               end
-              machine_spec.save(nil)
             end
           end
         end
