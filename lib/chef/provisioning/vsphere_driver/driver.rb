@@ -76,7 +76,7 @@ module ChefProvisioningVsphere
       uri = URI(driver_url)
       @connect_options = {
         provider: "vsphere",
-        vsphere_cluster: "#{driver_options[:vsphere_cluster]}"
+        vsphere_cluster: "#{driver_options[:vsphere_cluster]}",
         host: uri.host,
         port: uri.port,
         use_ssl: uri.use_ssl,

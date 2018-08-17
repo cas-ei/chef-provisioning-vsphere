@@ -3,5 +3,5 @@
 # Provisions machines in vSphere.
 module ChefProvisioningVsphere
   # The version of this awesome Gem. BOOM.
-  VERSION = "2.3.2.ei".freeze
+  VERSION = "2.3.3.ei".freeze
 end

@@ -393,9 +393,10 @@ module ChefProvisioningVsphere
       action_handler.report_progress("finding networks...")
       network = find_network(network_name)
       action_handler.report_progress(
-        "network: #{network_name} is a #{network.class}"
-        Chef::Log.debug("network type: #{network.class}")
+        "network: #{network_name}"
       )
+      Chef::Log.debug("network type: #{network.class}")
+      
       if network.is_a?(RbVmomi::VIM::DistributedVirtualPortgroup)
         port = RbVmomi::VIM::DistributedVirtualSwitchPortConnection(
           switchUuid: network.config.distributedVirtualSwitch.uuid,
