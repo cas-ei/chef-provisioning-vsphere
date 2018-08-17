@@ -383,9 +383,7 @@ module ChefProvisioningVsphere
           "IP address obtained: #{machine_spec.location['ipaddress']}"
         )
       end
-puts "***********"
       wait_for_domain(bootstrap_options, vm, machine_spec, action_handler)
-puts "***********"
       begin
         wait_for_transport(action_handler, machine_spec, machine_options, vm)
       rescue Timeout::Error

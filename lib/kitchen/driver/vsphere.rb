@@ -64,7 +64,6 @@ module Kitchen
           begin
             driver.allocate_machine(action_handler, machine_spec, config[:machine_options])
             driver.ready_machine(action_handler, machine_spec, config[:machine_options])
-            puts "HDDFSFSDFSDFSDF"
           rescue
             raise
           ensure
