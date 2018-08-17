@@ -76,6 +76,7 @@ module ChefProvisioningVsphere
       uri = URI(driver_url)
       @connect_options = {
         provider: "vsphere",
+        vsphere_cluster: "#{driver_options[:vsphere_cluster]}"
         host: uri.host,
         port: uri.port,
         use_ssl: uri.use_ssl,
@@ -163,9 +164,11 @@ module ChefProvisioningVsphere
       end
       bootstrap_options = machine_options[:bootstrap_options]
 
-      action_handler.report_progress full_description(
-        machine_spec, bootstrap_options
+      action_handler.report_progress short_description(
+        machine_spec
       )
+
+      Chef::Log.debug(debug_options(bootstrap_options))
 
       vm = find_or_create_vm(bootstrap_options, machine_spec, action_handler)
 
@@ -230,13 +233,31 @@ module ChefProvisioningVsphere
       end
       vm
     end
-
+    
+    # Creates a short description of the machine.
+    #
+    # @param [Object] bootstrap_options taken from Chef provisioning for all the bootstrap options.
+    # @param [Object] machine_spec taken from Chef provisioning for all the `machine_spec`.
+    def short_description(machine_spec)
+      ["creating #{machine_spec.name} on #{@connect_options[:vsphere_cluster]} (#{@connect_options[:host]})"]
+    end
+    
     # Creates a full description of the machine.
     #
     # @param [Object] bootstrap_options taken from Chef provisioning for all the bootstrap options.
     # @param [Object] machine_spec taken from Chef provisioning for all the `machine_spec`.
     def full_description(machine_spec, bootstrap_options)
-      description = ["creating machine #{machine_spec.name} on #{driver_url}"]
+      description = short_description(machine_spec)
+      description << debug_options(bootstrap_options)
+      description
+    end
+    
+    # Creates an array of option descriptions for debugging. 
+    #
+    # @param [Object] bootstrap_options taken from Chef provisioning for all the bootstrap options.
+    # @param [Object] machine_spec taken from Chef provisioning for all the `machine_spec`.
+    def debug_options(bootstrap_options)
+      options_desc = []
       bootstrap_options.to_hash.each_pair do |key, value|
         if value.is_a?(Hash)
           temp_value = value.clone
@@ -244,9 +265,9 @@ module ChefProvisioningVsphere
         else
           temp_value = value
         end
-        description << "  #{key}: #{temp_value.inspect}"
+        options_desc << "  #{key}: #{temp_value.inspect}"
       end
-      description
+      options_desc
     end
 
     # Creates a string of specific Machine information
@@ -256,7 +277,7 @@ module ChefProvisioningVsphere
     # @param [Object] action TODO
     # @return [String] "Machine - ACTION - NAME (UUID on URL)"
     def machine_msg(name, id, action)
-      "Machine - #{action} - #{name} (#{id} on #{driver_url})"
+      "#{name} #{action}\n id: #{id} on #{@connect_options[:vsphere_cluster]} (#{@connect_options[:host]})"
     end
 
     # Sets the machine to ready state. (Creates the machine but does not bootstrap Chef into it.)
@@ -362,9 +383,9 @@ module ChefProvisioningVsphere
           "IP address obtained: #{machine_spec.location['ipaddress']}"
         )
       end
-
+puts "***********"
       wait_for_domain(bootstrap_options, vm, machine_spec, action_handler)
-
+puts "***********"
       begin
         wait_for_transport(action_handler, machine_spec, machine_options, vm)
       rescue Timeout::Error
@@ -564,9 +585,8 @@ module ChefProvisioningVsphere
       merge_options! machine_options
       vm = vm_for(machine_spec)
       if vm
-        action_handler.perform_action "Power on VM [#{vm.parent.name}/#{vm.name}]" do
-          vsphere_helper.start_vm(vm, machine_options[:bootstrap_options][:ssh][:port])
-        end
+        Chef::Log.debug("Power on VM [#{vm.parent.name}/#{vm.name}]")
+        vsphere_helper.start_vm(vm, machine_options[:bootstrap_options][:ssh][:port])
       end
       vm
     end
@@ -646,7 +666,7 @@ module ChefProvisioningVsphere
     def wait_until_ready(action_handler, machine_spec, machine_options, vm)
       if vm.guest.toolsRunningStatus != "guestToolsRunning"
         if action_handler.should_perform_actions
-          action_handler.report_progress "waiting for #{machine_spec.name} (#{vm.config.instanceUuid} on #{driver_url}) to be ready ..."
+          action_handler.report_progress "waiting for #{machine_spec.name} to be ready ..."
           until remaining_wait_time(machine_spec, machine_options) < 0 ||
               (vm.guest.toolsRunningStatus == "guestToolsRunning" && vm.guest.ipAddress && !vm.guest.ipAddress.empty?)
             print "."
@@ -673,17 +693,18 @@ module ChefProvisioningVsphere
 
       vm_folder = vsphere_helper.find_folder(bootstrap_options[:vm_folder])
       last_progress = 0
+      print "\nCloning VM"
       vm_template.CloneVM_Task(
         name: machine_name,
         folder: vm_folder,
         spec: clone_spec
       ).wait_for_progress do |progress|
         if (progress.is_a? Numeric) && (progress / 10).floor != (last_progress / 10).floor
-          print "\n#{machine_name} progress: #{progress}%"
+          print "...#{progress}%"
           last_progress = progress
         end
       end
-      print "\n#{machine_name} done!\n\n"
+      print "...Done!\n\n"
 
       vm = vsphere_helper.find_vm(vm_folder, machine_name)
       add_machine_spec_location(vm, machine_spec)

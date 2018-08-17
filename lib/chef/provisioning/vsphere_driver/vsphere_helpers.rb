@@ -28,7 +28,7 @@ module ChefProvisioningVsphere
     def vim
       if @current_connection.nil? || @current_connection.serviceContent.sessionManager.currentSession.nil?
         @datacenter = nil
-        puts "establishing connection to #{connect_options[:host]}"
+        Chef::Log.debug "establishing connection to #{connect_options[:host]}"
         @current_connection = RbVmomi::VIM.connect connect_options
         str_conn = @current_connection.pretty_inspect # a string in the format of VIM(host ip)
 
@@ -369,7 +369,7 @@ module ChefProvisioningVsphere
         if card = cards.shift # rubocop:disable Lint/AssignmentInCondition
           key = card.key
           operation = RbVmomi::VIM::VirtualDeviceConfigSpecOperation("edit")
-          action_handler.report_progress "changing template nic for #{networks[i]}"
+          Chef::Log.debug("changing template nic for #{networks[i]}")
           changes.push(
             network_adapter_for(operation, networks[i], label, key, backing_info)
           )
@@ -394,6 +394,7 @@ module ChefProvisioningVsphere
       network = find_network(network_name)
       action_handler.report_progress(
         "network: #{network_name} is a #{network.class}"
+        Chef::Log.debug("network type: #{network.class}")
       )
       if network.is_a?(RbVmomi::VIM::DistributedVirtualPortgroup)
         port = RbVmomi::VIM::DistributedVirtualSwitchPortConnection(

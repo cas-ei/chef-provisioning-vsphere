@@ -32,7 +32,23 @@ module Kitchen
                      }
 
       default_config(:vsphere_name) do |driver|
-        "#{driver.instance.name}-#{SecureRandom.hex(4)}"
+        sep = '-'
+        pieces = [
+          driver.instance.name,
+          Etc.getlogin,
+          Socket.gethostname,
+          SecureRandom.hex(4)
+        ]
+        until pieces.join(sep).length <= 64 do
+          if pieces[2].length > 24
+            pieces[2] = pieces[2][0..-2]
+          elsif pieces[1].length > 16
+            pieces[1] = pieces[1][0..-2]
+          elsif pieces[0].length > 16
+            pieces[0] = pieces[0][0..-2]
+          end
+        end
+        pieces.join sep
       end
 
       # Creates VM on the vSphere cluster
@@ -48,6 +64,7 @@ module Kitchen
           begin
             driver.allocate_machine(action_handler, machine_spec, config[:machine_options])
             driver.ready_machine(action_handler, machine_spec, config[:machine_options])
+            puts "HDDFSFSDFSDFSDF"
           rescue
             raise
           ensure
@@ -56,7 +73,7 @@ module Kitchen
                 state[:server_id] = machine_spec.location["server_id"]
                 state[:hostname] = machine_spec.location["ipaddress"]
               end
-              machine_spec.save(action_handler)
+              machine_spec.save(nil)
             end
           end
         end
